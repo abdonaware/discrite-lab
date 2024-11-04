@@ -22,10 +22,12 @@ public class ExpressionSolver {
 
         private String representation;
 
+        @Override
         public String getRepresentation() {
             return representation;
         }
 
+        @Override
         public void setRepresentation(String representation) {
             this.representation = representation;
         }
@@ -36,16 +38,17 @@ public class ExpressionSolver {
 
         public char[] operatorArray;
         public boolean[] operatorsValue;
-        boolean preveseIsnum = false;
-        int countNoInStackAfterLastOp = 0;
 
+        @Override
         public boolean evaluateExpression(Expression expression) {
             char result;
             Stack<Character> opeartions = new Stack<>();
             for (char elem : expression.getRepresentation().toCharArray()) {
                 switch (elem) {
                     case '~':
-
+                        if (opeartions.isEmpty()) {
+                            throw new Error("invald Expression");
+                        }
                         char oper = opeartions.pop();
                         if (oper == '1') {
                             opeartions.push('0');
@@ -55,8 +58,13 @@ public class ExpressionSolver {
 
                         break;
                     case '^':
-
+                        if (opeartions.isEmpty()) {
+                            throw new Error("invald Expression");
+                        }
                         char oper1 = opeartions.pop();
+                        if (opeartions.isEmpty()) {
+                            throw new Error("invald Expression");
+                        }
                         char oper2 = opeartions.pop();
                         if (oper1 == '1' && oper2 == '1') {
                             opeartions.push('1');
@@ -65,8 +73,13 @@ public class ExpressionSolver {
                         }
                         break;
                     case 'v':
-
+                        if (opeartions.isEmpty()) {
+                            throw new Error("invald Expression");
+                        }
                         oper1 = opeartions.pop();
+                        if (opeartions.isEmpty()) {
+                            throw new Error("invald Expression");
+                        }
                         oper2 = opeartions.pop();
                         if (oper1 == '0' && oper2 == '0') {
                             opeartions.push('0');
@@ -76,8 +89,13 @@ public class ExpressionSolver {
 
                         break;
                     case '>':
-
+                        if (opeartions.isEmpty()) {
+                            throw new Error("invald Expression");
+                        }
                         oper2 = opeartions.pop();
+                        if (opeartions.isEmpty()) {
+                            throw new Error("invald Expression");
+                        }
                         oper1 = opeartions.pop();
                         if (oper1 == '1' && oper2 == '0') {
                             opeartions.push('0');
@@ -95,6 +113,9 @@ public class ExpressionSolver {
                 }
 
             }
+            if(opeartions.isEmpty()){
+                throw new Error("invald Expression");
+                }
             result = opeartions.pop();
             if (result == '0') {
                 return false;
