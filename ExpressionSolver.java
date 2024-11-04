@@ -36,94 +36,66 @@ public class ExpressionSolver {
 
         public char[] operatorArray;
         public boolean[] operatorsValue;
+        boolean preveseIsnum = false;
+        int countNoInStackAfterLastOp = 0;
 
         public boolean evaluateExpression(Expression expression) {
-            char result = '0';
-            boolean start = true;
+            char result;
             Stack<Character> opeartions = new Stack<>();
             for (char elem : expression.getRepresentation().toCharArray()) {
                 switch (elem) {
                     case '~':
-                        if (start) {
-                            start = false;
-                            char oper = opeartions.pop();
-                            result = oper == '1' ? '0' : '1';
+
+                        char oper = opeartions.pop();
+                        if (oper == '1') {
+                            opeartions.push('0');
                         } else {
-                            result = result == '1' ? '0' : '1';
+                            opeartions.push('1');
                         }
+
                         break;
                     case '^':
-                        if (start) {
-                            start = false;
-                            char oper1 = opeartions.pop();
-                            char oper2 = opeartions.pop();
-                            if (oper1 == '1' && oper2 == '1') {
-                                result = '1';
-                            } else {
-                                result = '0';
-                            }
-                        } else {
-                            char oper1 = opeartions.pop();
 
-                            if (oper1 == '1' && result == '1') {
-                                result = '1';
-                            } else {
-                                result = '0';
-                            }
+                        char oper1 = opeartions.pop();
+                        char oper2 = opeartions.pop();
+                        if (oper1 == '1' && oper2 == '1') {
+                            opeartions.push('1');
+                        } else {
+                            opeartions.push('0');
                         }
                         break;
                     case 'v':
-                        start = false;
-                        if (start) {
-                            char oper1 = opeartions.pop();
-                            char oper2 = opeartions.pop();
-                            if (oper1 == '0' && oper2 == '0') {
-                                result = '0';
-                            } else {
-                                result = '1';
-                            }
-                        } else {
-                            char oper1 = opeartions.pop();
 
-                            if (oper1 == '0' && result == '0') {
-                                result = '0';
-                            } else {
-                                result = '1';
-                            }
+                        oper1 = opeartions.pop();
+                        oper2 = opeartions.pop();
+                        if (oper1 == '0' && oper2 == '0') {
+                            opeartions.push('0');
+                        } else {
+                            opeartions.push('1');
                         }
 
                         break;
                     case '>':
-                        if (start) {
-                            start = false;
-                            char oper1 = opeartions.pop();
-                            char oper2 = opeartions.pop();
-                            if (oper1 == '1' && oper2 == '0') {
-                                result = '0';
-                            } else {
-                                result = '1';
-                            }
-                        } else {
-                            char oper1 = opeartions.pop();
 
-                            if (oper1 == '1' && result == '0') {
-                                result = '0';
-                            } else {
-                                result = '1';
-                            }
+                        oper2 = opeartions.pop();
+                        oper1 = opeartions.pop();
+                        if (oper1 == '1' && oper2 == '0') {
+                            opeartions.push('0');
+                        } else {
+                            opeartions.push('1');
                         }
 
                         break;
                     case '0':
                     case '1':
                         opeartions.push(elem);
-
                         break;
                     default:
                         throw new AssertionError();
                 }
 
             }
+            result = opeartions.pop();
             if (result == '0') {
                 return false;
             } else {
@@ -164,7 +136,7 @@ public class ExpressionSolver {
                     opeartions.push(c);
                     break;
                 case '^':
-                    if (!operatorsFlag || count != 0) {
+                    if (!operatorsFlag && count != 0) {
                         operatorsFlag = true;
                         letterflag = false;
                         count++;
@@ -177,7 +149,7 @@ public class ExpressionSolver {
                     }
                     break;
                 case 'v':
-                    if (!operatorsFlag || count != 0) {
+                    if (!operatorsFlag && count != 0) {
                         operatorsFlag = true;
                         letterflag = false;
                         count++;
@@ -190,7 +162,7 @@ public class ExpressionSolver {
                     }
                     break;
                 case '>':
-                    if (!operatorsFlag || count != 0) {
+                    if (!operatorsFlag && count != 0) {
                         operatorsFlag = true;
                         letterflag = false;
                         count++;
@@ -204,9 +176,10 @@ public class ExpressionSolver {
                     break;
 
                 case '(':
-                    count++;
 
                     opeartions.push(c);
+                    break;
+                case ' ':
                     break;
                 case ')':
                     count++;
@@ -238,7 +211,7 @@ public class ExpressionSolver {
                     }
             }
         }
-        while (!opeartions.isEmpty()&&(opeartions.peek()=='~'||opeartions.peek()=='^'||opeartions.peek()=='v'||opeartions.peek()=='>')) {
+        while (!opeartions.isEmpty() && (opeartions.peek() == '~' || opeartions.peek() == '^' || opeartions.peek() == 'v' || opeartions.peek() == '>')) {
             postFixExpression.append(opeartions.pop());
         }
         if (!opeartions.isEmpty()) {
@@ -258,13 +231,14 @@ public class ExpressionSolver {
         try {
             Scanner sc = new Scanner(System.in);
             LogicExpression lc = new LogicExpression();
-            System.out.println("Enter a logical expression:");
+            System.out.println(" ");
+            System.out.print("Enter a logical expression: ");
             lc.setRepresentation(sc.nextLine());
-    
+
             ValidationResult validationResult = expressionValidation(lc.getRepresentation());
             boolean[] operatorsValue = new boolean[validationResult.operatorArray.length];
             ExpressionEvaluator evaluator = new ExpressionEvaluator();
-    
+
             for (int i = 0; i < validationResult.operatorArray.length; i++) {
                 System.out.print("Please enter the boolean value of " + validationResult.operatorArray[i] + " (true/false): ");
                 while (!sc.hasNextBoolean()) {
@@ -273,25 +247,33 @@ public class ExpressionSolver {
                 }
                 operatorsValue[i] = sc.nextBoolean();
             }
-    
+
             StringBuilder modifiedPostfix = new StringBuilder();
-            for (char elem : validationResult.getPostfix().toCharArray()) {
-                if (Character.isLetter(elem)&&elem!='v') {
+            char[] postfixArray = validationResult.getPostfix().toCharArray();
+            boolean flag = false;
+            int indexOfUsedNegation = 0;
+            for (int i = 0; i < postfixArray.length; i++) {
+                char elem = postfixArray[i];
+                if (indexOfUsedNegation != i && flag) {
+                    flag = false;
+                }
+                if (Character.isLetter(elem) && elem != 'v') {
                     int index = new String(validationResult.getOperatorArray()).indexOf(elem);
-                    modifiedPostfix.append(operatorsValue[index] ? '1' : '0');
+                    boolean value = operatorsValue[index];
+                    modifiedPostfix.append(value ? '1' : '0');
                 } else {
                     modifiedPostfix.append(elem);
                 }
             }
+            System.out.println("postfix" + " " + modifiedPostfix.toString() + " " + validationResult.getPostfix());
             lc.setRepresentation(modifiedPostfix.toString());
-    
             boolean answer = evaluator.evaluateExpression(lc);
             System.out.println("The answer is: " + answer);
             sc.close();
-    
+
         } catch (Error e) {
-            System.err.println("Error encountered: " + e.getMessage());
-            e.printStackTrace();  // Print stack trace for additional debugging
+            System.err.println(e.getMessage());
+            // Print stack trace for additional debugging
         } catch (Exception e) {
             System.err.println("Unexpected exception: " + e.getMessage());
             e.printStackTrace();  // Print stack trace for additional debugging
