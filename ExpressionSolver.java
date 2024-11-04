@@ -2,6 +2,7 @@
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Stack;
 
 public class ExpressionSolver {
 
@@ -31,30 +32,51 @@ public class ExpressionSolver {
 
     }
 
-    static class Parser {
+    static class ExpressionEvaloter implements LogicalExpressionSolver {
 
-        public List<String> sampleExpression = new ArrayList<>();
+        public char[] operatorArray;
+        public boolean[] operatorsValue;
+
+        // public boolean evaluateExpression(Expression expression) {
+
+        // }
 
     }
 
     static char[] expressionValidation(String representation) {
         boolean letterflag = false, operatorsFlag = false;
         List<Character> operators = new ArrayList<>();
+        Stack<Character> opeartions = new Stack<>();
+        String postFixExpression;
         int count = 0;
         int bractCount = 0;
         for (char c : representation.toCharArray()) {
             switch (c) {
                 case '~':
-                    // if (!operatorsFlag) {
-                    //     operatorsFlag = true;
-                    //     letterflag = false;
-                    //     count++;
-                    // } else {
-                    //     throw new Error("invald Expression");
-                    // }
+                    opeartions.push(c);
                     break;
                 case '^':
+                    if (!operatorsFlag || count != 0) {
+                        operatorsFlag = true;
+                        letterflag = false;
+                        count++;
+                        if (!operators.isEmpty() && opeartions.peek() == '~') {
+                            postFixExpression.append(string(opeartions.pop()));
+                        }
+                        opeartions.push(c);
+                    } else {
+                        throw new Error("invald Expression");
+                    }
+                    break;
                 case 'v':
+                    if (!operatorsFlag || count != 0) {
+                        operatorsFlag = true;
+                        letterflag = false;
+                        count++;
+                    } else {
+                        throw new Error("invald Expression");
+                    }
+                    break;
                 case '>':
                     if (!operatorsFlag || count != 0) {
                         operatorsFlag = true;
@@ -112,17 +134,20 @@ public class ExpressionSolver {
             lc.setRepresentation(sc.nextLine());
             char[] operatorArray = expressionValidation(lc.getRepresentation());
             boolean operatorsValue[] = new boolean[operatorArray.length];
-            
-            for (int i = 0 ;i< operatorArray.length;i++) {
-                System.out.print("plese Enter the boolen value of "+ operatorArray[i]);
-                operatorsValue[i]= sc.nextBoolean();
+
+            for (int i = 0; i < operatorArray.length; i++) {
+                System.out.print("plese Enter the boolen value of " + operatorArray[i]);
+                while (!sc.hasNextBoolean()) {
+                    System.out.println("Invalid input. Please enter true or false.");
+                    sc.next(); // Consume the invalid input
+                }
+                operatorsValue[i] = sc.nextBoolean();
             }
 
             sc.close();
-        }catch(Error e){
+        } catch (Error e) {
             System.err.println(e.getMessage());
-        } 
-        catch (Exception e) {
+        } catch (Exception e) {
         }
     }
 }
