@@ -271,9 +271,11 @@ class Resolution implements InferenceRule {
 
     if (result) {
       if (premise2.includes(premise1.left.complement()))
-        this.premise = new Expression(premise1.right.toString() + "v" + premise2.theOther(premise1.left.complement()).toString());
+        this.premise = new Expression(
+            premise1.right.toString() + "v" + premise2.theOther(premise1.left.complement()).toString());
       else
-        this.premise = new Expression(premise1.left.toString() + "v" + premise2.theOther(premise1.right.complement()).toString());
+        this.premise = new Expression(
+            premise1.left.toString() + "v" + premise2.theOther(premise1.right.complement()).toString());
     }
 
     return result;
@@ -302,6 +304,12 @@ class Engine implements InferenceEngine {
       exp2 = exp;
   }
 
+  public Engine setExpressions(Expression exp1, Expression exp2) {
+    this.exp1 = exp1;
+    this.exp2 = exp2;
+    return this;
+  }
+
   public void addRule(InferenceRule rule) {
     rules.add(rule);
   }
@@ -324,6 +332,13 @@ class Engine implements InferenceEngine {
 
 public class InferenceApp {
   public static void main(String[] args) {
+    for (String arg : args) {
+      if ("--demo".equals(arg)) {
+        InferenceDemo.run();
+        return;
+      }
+    }
+
     InferenceRule[] rules = {
         new ModusPonens(),
         new ModusTollens(),
@@ -347,5 +362,145 @@ public class InferenceApp {
       else
         System.out.println("The input expression cannot be inferred");
     }
+  }
+}
+
+class InferenceDemo {
+  public static void run() {
+    InferenceRule[] rules = {
+        new ModusPonens(),
+        new ModusTollens(),
+        new HypotheticalSyllogism(),
+        new DisjunctiveSyllogism(),
+        new Resolution()
+    };
+
+    Engine engine = new Engine();
+    for (InferenceRule rule : rules)
+      engine.addRule(rule);
+
+    Expression result;
+
+    /**
+     * Switching expressions order won't matter and doesn't need to be tested
+     * becuase every rule tries matching in both orders. We don't test syntactical
+     * errors also because it is verified during development. We care more here
+     * about logical errors
+     */
+
+    // Modus Ponens Tests
+    result = engine.setExpressions(
+        new Expression("P > Q"),
+        new Expression("P")).applyRules();
+    assert result.toString().equals("Q");
+
+    result = engine.setExpressions(
+        new Expression("P > ~Q"),
+        new Expression("P")).applyRules();
+    assert result.toString().equals("~Q");
+
+    result = engine.setExpressions(
+        new Expression("~P > Q"),
+        new Expression("~P")).applyRules();
+    assert result.toString().equals("Q");
+
+    result = engine.setExpressions(
+        new Expression("~P > ~Q"),
+        new Expression("~P")).applyRules();
+    assert result.toString().equals("~Q");
+
+    // Modus Tollens Tests
+    result = engine.setExpressions(
+        new Expression("P > Q"),
+        new Expression("~Q")).applyRules();
+    assert result.toString().equals("~P");
+
+    result = engine.setExpressions(
+        new Expression("P > ~Q"),
+        new Expression("Q")).applyRules();
+    assert result.toString().equals("~P");
+
+    result = engine.setExpressions(
+        new Expression("~P > Q"),
+        new Expression("~Q")).applyRules();
+    assert result.toString().equals("P");
+
+    result = engine.setExpressions(
+        new Expression("~P > ~Q"),
+        new Expression("Q")).applyRules();
+    assert result.toString().equals("P");
+
+    // Hypothetical Syllogism
+    result = engine.setExpressions(
+        new Expression("P > Q"),
+        new Expression("Q > R")).applyRules();
+    assert result.toString().equals("P > R");
+
+    result = engine.setExpressions(
+        new Expression("P > ~Q"),
+        new Expression("~Q > R")).applyRules();
+    assert result.toString().equals("P > R");
+
+    result = engine.setExpressions(
+        new Expression("~P > Q"),
+        new Expression("Q > R")).applyRules();
+    assert result.toString().equals("~P > R");
+
+    result = engine.setExpressions(
+        new Expression("P > Q"),
+        new Expression("Q > ~R")).applyRules();
+    assert result.toString().equals("P > ~R");
+
+    result = engine.setExpressions(
+        new Expression("~P > Q"),
+        new Expression("Q > ~R")).applyRules();
+    assert result.toString().equals("~P > ~R");
+
+    // Disjunctive Syllogism
+    result = engine.setExpressions(
+        new Expression("P v Q"),
+        new Expression("~P")).applyRules();
+    assert result.toString().equals("Q");
+
+    result = engine.setExpressions(
+        new Expression("~P v Q"),
+        new Expression("P")).applyRules();
+    assert result.toString().equals("Q");
+
+    result = engine.setExpressions(
+        new Expression("~P v ~Q"),
+        new Expression("P")).applyRules();
+    assert result.toString().equals("~Q");
+
+    result = engine.setExpressions(
+        new Expression("P v ~Q"),
+        new Expression("~P")).applyRules();
+    assert result.toString().equals("~Q");
+
+    // Resolution
+    result = engine.setExpressions(
+        new Expression("P v Q"),
+        new Expression("~P v R")).applyRules();
+    assert result.toString().equals("Q v R");
+
+    result = engine.setExpressions(
+        new Expression("~P v Q"),
+        new Expression("P v R")).applyRules();
+    assert result.toString().equals("Q v R");
+
+    result = engine.setExpressions(
+        new Expression("P v ~Q"),
+        new Expression("~P v R")).applyRules();
+    assert result.toString().equals("~Q v R");
+
+    result = engine.setExpressions(
+        new Expression("P v Q"),
+        new Expression("~P v ~R")).applyRules();
+    assert result.toString().equals("Q v ~R");
+
+    result = engine.setExpressions(
+        new Expression("P v ~Q"),
+        new Expression("~P v ~R")).applyRules();
+    assert result.toString().equals("~Q v ~R");
   }
 }
