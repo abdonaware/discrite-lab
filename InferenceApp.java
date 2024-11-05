@@ -68,7 +68,7 @@ class Operand {
 
 class Expression {
   private static String OPERAND_REGEX = "([~]*.+)";
-  private static String OPERATOR_REGEX = "([>v&])";
+  private static String OPERATOR_REGEX = "([>v])";
 
   private static Pattern BINARY_REGEX = Pattern
       .compile(OPERAND_REGEX + "\\s*" + OPERATOR_REGEX + "\\s*" + OPERAND_REGEX);
