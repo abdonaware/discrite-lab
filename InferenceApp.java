@@ -3,6 +3,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.ArrayList;
 
+/**
+ * Run java -ea <class_file> --demo to run demo
+ */
+
 // Interfaces and Excpetions
 class InvalidPattern extends RuntimeException {
   public InvalidPattern(String input) {
@@ -441,6 +445,8 @@ class InferenceDemo {
     for (Testrun run : testRuns) {
       assert engine.setExpressions(run.exp1, run.exp2).applyRules().toString().equals(run.result.toString())
           : "Error in run: " + run.exp1.toString() + " and " + run.exp2.toString();
+
+      System.out.println("Asserted that infering expressions '"+run.exp1+"' and '"+run.exp2+"' results in '"+run.result+"'");
     }
   }
 }
