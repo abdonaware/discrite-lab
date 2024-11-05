@@ -286,7 +286,6 @@ public class ExpressionSolver {
                     modifiedPostfix.append(elem);
                 }
             }
-            System.out.println("postfix" + " " + modifiedPostfix.toString() + " " + validationResult.getPostfix());
             lc.setRepresentation(modifiedPostfix.toString());
             boolean answer = evaluator.evaluateExpression(lc);
             System.out.println("The answer is: " + answer);
