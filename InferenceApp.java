@@ -201,35 +201,35 @@ class DisjunctiveSyllogism implements InferenceRule {
   }
 }
 
-class Resulution implements InferenceRule {
-  Expression premise;
+// class Resolution implements InferenceRule {
+//   Expression premise;
 
-  public boolean matches(Expression exp1, Expression exp2) {
-    return disjunctiveSyllogismPattern(exp1, exp2) || disjunctiveSyllogismPattern(exp2, exp1);
-  }
+//   public boolean matches(Expression exp1, Expression exp2) {
+//     return resolutionPattern(exp1, exp2) || resolutionPattern(exp2, exp1);
+//   }
 
-  public Expression apply(Expression exp1, Expression exp2) {
-    return premise;
-  }
+//   public Expression apply(Expression exp1, Expression exp2) {
+//     return premise;
+//   }
 
-  private boolean resoltuionPattern(Expression premise1, Expression premise2) {
-    boolean result = premise1.operator.equals("v") && premise2.operator.equals("~")
-        && (premise1.left.equals(premise2.right) || premise1.right.equals(premise2.right));
+//   private boolean resoltuionPattern(Expression premise1, Expression premise2) {
+//     boolean result = premise1.operator.equals("v") && premise2.operator.equals("~")
+//         && (premise1.left.equals(premise2.right) || premise1.right.equals(premise2.right));
 
-    if (result) {
-      if (premise1.left.equals(premise2.right))
-        this.premise = new Expression(premise1.right);
-      else
-        this.premise = new Expression(premise1.left);
-    }
+//     if (result) {
+//       if (premise1.left.equals(premise2.right))
+//         this.premise = new Expression(premise1.right);
+//       else
+//         this.premise = new Expression(premise1.left);
+//     }
 
-    return result;
-  }
+//     return result;
+//   }
 
-  public String getName() {
-    return "Disjunctive Syllogism";
-  }
-}
+//   public String getName() {
+//     return "Disjunctive Syllogism";
+//   }
+// }
 
 
 // Brute force inference engine
