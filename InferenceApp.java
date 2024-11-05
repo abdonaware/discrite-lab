@@ -397,8 +397,6 @@ class InferenceDemo {
     for (InferenceRule rule : rules)
       engine.addRule(rule);
 
-    Expression result;
-
     /**
      * Switching expressions order won't matter and doesn't need to be tested
      * becuase every rule tries matching in both orders. We don't test syntactical
