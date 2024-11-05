@@ -71,7 +71,7 @@ class Operand {
 }
 
 class Expression {
-  private static String OPERAND_REGEX = "([~]*.+)";
+  private static String OPERAND_REGEX = "([~]*[A-Za-z]+)";
   private static String OPERATOR_REGEX = "([>v])";
 
   private static Pattern BINARY_REGEX = Pattern
@@ -353,8 +353,14 @@ public class InferenceApp {
 
     while (true) {
       Engine engine = new Engine();
-      engine.addExpression(Expression.fromInput());
-      engine.addExpression(Expression.fromInput());
+      try{
+        engine.addExpression(Expression.fromInput());
+        engine.addExpression(Expression.fromInput());
+      }
+      catch(InvalidPattern e) {
+        System.out.println(e.getMessage());
+        continue;
+      }
 
       for (InferenceRule rule : rules)
         engine.addRule(rule);
@@ -446,7 +452,8 @@ class InferenceDemo {
       assert engine.setExpressions(run.exp1, run.exp2).applyRules().toString().equals(run.result.toString())
           : "Error in run: " + run.exp1.toString() + " and " + run.exp2.toString();
 
-      System.out.println("Asserted that infering expressions '"+run.exp1+"' and '"+run.exp2+"' results in '"+run.result+"'");
+      System.out.println("Asserted that infering expressions '" + run.exp1 + "' and '" + run.exp2 + "' results in '"
+          + run.result + "'");
     }
   }
 }
