@@ -28,44 +28,84 @@ interface InferenceEngine {
 }
 
 // Expression DTO and Parser
+
+class Operand {
+  boolean negated;
+  String operand;
+
+  Operand(boolean negated, String operand) {
+    this.negated = negated;
+    this.operand = operand.trim();
+  }
+
+  Operand(String input) {
+    input = input.trim();
+
+    negated = input.charAt(0) == '~';
+    operand = (negated ? input.substring(1) : input).trim();
+  }
+
+  public String toString() {
+    return (negated ? "~" : "") + operand;
+  }
+
+  public boolean complementaryTo(Operand op) {
+    return isNegated() != op.isNegated();
+  }
+
+  public boolean isNegated() {
+    return negated;
+  }
+
+  public boolean equals(Operand op2) {
+    return toString().equals(op2.toString());
+  }
+
+  public Operand complement() {
+    return new Operand(!negated, operand);
+  }
+}
+
 class Expression {
-  private static Pattern BINARY_REGEX = Pattern.compile("(.+)\\s*([>v&])\\s*(.+)");
-  private static Pattern UNARY_REGEX = Pattern.compile("([~])(.+)");
-  private static Pattern NO_OP_REGEX = Pattern.compile("([A-Za-z]+)");
+  private static String OPERAND_REGEX = "([~]*.+)";
+  private static String OPERATOR_REGEX = "([>v&])";
+
+  private static Pattern BINARY_REGEX = Pattern
+      .compile(OPERAND_REGEX + "\\s*" + OPERATOR_REGEX + "\\s*" + OPERAND_REGEX);
+  private static Pattern ONE_OPERAND_REGEX = Pattern.compile("\\s*" + OPERAND_REGEX + "\\s*");
 
   private static Scanner scan;
 
-  String left;
-  String right;
+  Operand left;
+  Operand right;
   String operator;
+
+  Expression(Operand operand) {
+    left = operand;
+    right = null;
+    operator = null;
+  }
 
   Expression(String input) {
     Matcher binary = BINARY_REGEX.matcher(input);
-    Matcher unary = UNARY_REGEX.matcher(input);
-    Matcher no_operator = NO_OP_REGEX.matcher(input);
+    Matcher one_operand = ONE_OPERAND_REGEX.matcher(input);
     if (binary.matches()) {
-      this.left = binary.group(1).trim();
+      this.left = new Operand(binary.group(1));
       this.operator = binary.group(2).trim();
-      this.right = binary.group(3).trim();
+      this.right = new Operand(binary.group(3));
 
       // System.out.println(binary.group(1));
       // System.out.println(binary.group(2));
       // System.out.println(binary.group(3));
     }
 
-    else if (unary.matches()) {
-      this.left = "";
-      this.operator = unary.group(1).trim();
-      this.right = unary.group(2).trim();
+    else if (one_operand.matches()) {
+      this.left = new Operand(one_operand.group(1));
+      this.operator = null;
+      this.right = null;
 
       // System.out.println(unary.group(1));
       // System.out.println(unary.group(2));
-    }
-
-    else if (no_operator.matches()) {
-      this.left = input.trim();
-      this.operator = "";
-      this.right = "";
     }
 
     else
@@ -80,8 +120,27 @@ class Expression {
     return new Expression(scan.nextLine());
   }
 
+  public boolean isOperator(String op) {
+    return operator != null && operator.equals(op);
+  }
+
+  public boolean noOperator() {
+    return operator == null;
+  }
+
+  public boolean includes(Operand op) {
+    return left.equals(op) || right != null && right.equals(op);
+  }
+
+  public Operand theOther(Operand op) {
+    if (!left.equals(op))
+      return left;
+
+    return right;
+  }
+
   public String toString() {
-    return (left + " " + operator + " " + right).trim();
+    return (left + " " + (operator == null ? "" : operator) + " " + (right == null ? "" : right)).trim();
   }
 }
 
@@ -98,7 +157,7 @@ class ModusPonens implements InferenceRule {
   }
 
   private boolean modusPonensPattern(Expression premise1, Expression premise2) {
-    boolean result = premise1.operator.equals(">") && premise2.operator == "" && premise1.left.equals(premise2.left);
+    boolean result = premise1.isOperator(">") && premise2.noOperator() && premise1.left.equals(premise2.left);
 
     if (result)
       this.premise = premise1;
@@ -119,12 +178,11 @@ class ModusTollens implements InferenceRule {
   }
 
   public Expression apply(Expression exp1, Expression exp2) {
-    return new Expression("~" + this.premise.left);
+    return new Expression(this.premise.left.complement());
   }
 
   private boolean modusTollensPattern(Expression premise1, Expression premise2) {
-    boolean result = premise1.operator.equals(">") && premise2.operator.equals("~")
-        && premise1.right.equals(premise2.right);
+    boolean result = premise1.isOperator(">") && premise2.noOperator() && premise2.left.complementaryTo(premise1.right);
 
     if (result)
       this.premise = premise1;
@@ -146,21 +204,16 @@ class HypotheticalSyllogism implements InferenceRule {
   }
 
   public Expression apply(Expression exp1, Expression exp2) {
-    return new Expression(premise1.left + ">" + premise2.right);
+    return new Expression(premise1.left.toString() + ">" + premise2.right.toString());
   }
 
   private boolean hypotheticalSyllogismPattern(Expression premise1, Expression premise2) {
-    boolean result = premise1.operator.equals(">") && premise2.operator.equals(">")
-        && (premise1.right.equals(premise2.left) || premise2.left.equals(premise1.right));
+    boolean result = premise1.isOperator(">") && premise2.isOperator(">") &&
+        premise1.right.equals(premise2.left);
 
     if (result) {
-      if (premise1.right.equals(premise2.left)) {
-        this.premise1 = premise1;
-        this.premise2 = premise2;
-      } else {
-        this.premise1 = premise2;
-        this.premise2 = premise1;
-      }
+      this.premise1 = premise1;
+      this.premise2 = premise2;
     }
 
     return result;
@@ -183,11 +236,11 @@ class DisjunctiveSyllogism implements InferenceRule {
   }
 
   private boolean disjunctiveSyllogismPattern(Expression premise1, Expression premise2) {
-    boolean result = premise1.operator.equals("v") && premise2.operator.equals("~")
-        && (premise1.left.equals(premise2.right) || premise1.right.equals(premise2.right));
+    boolean result = premise1.isOperator("v") && premise2.noOperator()
+        && (premise1.left.complementaryTo(premise2.left) || premise1.right.complementaryTo(premise2.left));
 
     if (result) {
-      if (premise1.left.equals(premise2.right))
+      if (premise1.left.complementaryTo(premise2.left))
         this.premise = new Expression(premise1.right);
       else
         this.premise = new Expression(premise1.left);
@@ -201,36 +254,35 @@ class DisjunctiveSyllogism implements InferenceRule {
   }
 }
 
-// class Resolution implements InferenceRule {
-//   Expression premise;
+class Resolution implements InferenceRule {
+  Expression premise;
 
-//   public boolean matches(Expression exp1, Expression exp2) {
-//     return resolutionPattern(exp1, exp2) || resolutionPattern(exp2, exp1);
-//   }
+  public boolean matches(Expression exp1, Expression exp2) {
+    return resolutionPattern(exp1, exp2) || resolutionPattern(exp2, exp1);
+  }
 
-//   public Expression apply(Expression exp1, Expression exp2) {
-//     return premise;
-//   }
+  public Expression apply(Expression exp1, Expression exp2) {
+    return premise;
+  }
 
-//   private boolean resoltuionPattern(Expression premise1, Expression premise2) {
-//     boolean result = premise1.operator.equals("v") && premise2.operator.equals("~")
-//         && (premise1.left.equals(premise2.right) || premise1.right.equals(premise2.right));
+  private boolean resolutionPattern(Expression premise1, Expression premise2) {
+    boolean result = premise1.isOperator("v") && premise2.isOperator("v")
+        && (premise2.includes(premise1.left.complement()) || premise2.includes(premise1.right.complement()));
 
-//     if (result) {
-//       if (premise1.left.equals(premise2.right))
-//         this.premise = new Expression(premise1.right);
-//       else
-//         this.premise = new Expression(premise1.left);
-//     }
+    if (result) {
+      if (premise2.includes(premise1.left.complement()))
+        this.premise = new Expression(premise1.right.toString() + "v" + premise2.theOther(premise1.left.complement()).toString());
+      else
+        this.premise = new Expression(premise1.left.toString() + "v" + premise2.theOther(premise1.right.complement()).toString());
+    }
 
-//     return result;
-//   }
+    return result;
+  }
 
-//   public String getName() {
-//     return "Disjunctive Syllogism";
-//   }
-// }
-
+  public String getName() {
+    return "Disjunctive Syllogism";
+  }
+}
 
 // Brute force inference engine
 class Engine implements InferenceEngine {
@@ -276,21 +328,24 @@ public class InferenceApp {
         new ModusPonens(),
         new ModusTollens(),
         new HypotheticalSyllogism(),
-        new DisjunctiveSyllogism()
+        new DisjunctiveSyllogism(),
+        new Resolution()
     };
 
-    Engine engine = new Engine();
-    engine.addExpression(Expression.fromInput());
-    engine.addExpression(Expression.fromInput());
+    while (true) {
+      Engine engine = new Engine();
+      engine.addExpression(Expression.fromInput());
+      engine.addExpression(Expression.fromInput());
 
-    for (InferenceRule rule : rules)
-      engine.addRule(rule);
+      for (InferenceRule rule : rules)
+        engine.addRule(rule);
 
-    Expression result = engine.applyRules();
+      Expression result = engine.applyRules();
 
-    if (result != null)
-      System.out.println(result.toString() + " (" + engine.getAppliedRule().getName() + ")");
-    else
-      System.out.println("The input expression cannot be inferred");
+      if (result != null)
+        System.out.println(result.toString() + " (" + engine.getAppliedRule().getName() + ")");
+      else
+        System.out.println("The input expression cannot be inferred");
+    }
   }
 }
