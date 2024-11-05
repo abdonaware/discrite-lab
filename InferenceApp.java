@@ -4,7 +4,7 @@ import java.util.regex.Pattern;
 import java.util.ArrayList;
 
 /**
- * Run java -ea <class_file> --demo to run demo
+ * Run the command "java -ea <class_file> --demo" to run demo
  */
 
 // Interfaces and Excpetions
